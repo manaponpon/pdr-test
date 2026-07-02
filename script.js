@@ -1,7 +1,6 @@
-let startHeading = null;
-
 function requestPermission() {
 
+    // iPhone用
     if (
         typeof DeviceOrientationEvent !== "undefined" &&
         typeof DeviceOrientationEvent.requestPermission === "function"
@@ -13,44 +12,46 @@ function requestPermission() {
             if (response === "granted") {
                 startSensor();
             } else {
-                alert("センサの使用が許可されませんでした");
+                alert("センサが許可されませんでした");
             }
 
         })
         .catch(console.error);
 
     } else {
+        // AndroidやPC
         startSensor();
     }
 }
 
 function startSensor() {
 
-    window.addEventListener("deviceorientation", handleOrientation, true);
+    window.addEventListener("deviceorientation", handleOrientation);
+    window.addEventListener("devicemotion", handleMotion);
 
     alert("センサ開始しました");
 }
 
+// 向き
 function handleOrientation(event) {
 
-    // iPhone用
-    let heading = event.webkitCompassHeading;
-
-    // 他ブラウザ用
-    if (heading === undefined || heading === null) {
-        heading = event.alpha;
-    }
-
-    if (heading === null || heading === undefined) return;
-
-    // 最初の向きを保存
-    if (startHeading === null) {
-        startHeading = heading;
-    }
-
-    // 開始時を0°とする
-    let relativeHeading = (heading - startHeading + 360) % 360;
+    let heading = event.alpha;
 
     document.getElementById("heading").innerText =
-        "現在の向き : " + Math.round(relativeHeading) + "°";
+        Math.round(heading) + "°";
+}
+
+// 加速度
+function handleMotion(event) {
+
+    const acc = event.accelerationIncludingGravity;
+
+    document.getElementById("accX").innerText =
+        acc.x.toFixed(2);
+
+    document.getElementById("accY").innerText =
+        acc.y.toFixed(2);
+
+    document.getElementById("accZ").innerText =
+        acc.z.toFixed(2);
 }

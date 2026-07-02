@@ -2,18 +2,24 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDRテスト</title>
+    <title>PDR センサーテスト</title>
 </head>
+
 <body>
 
-    <h1>PDRテスト</h1>
+<h2>PDR センサーテスト</h2>
 
-    <button onclick="requestPermission()">センサ開始</button>
+<button onclick="requestPermission()">センサテスト開始</button>
 
-    <h2 id="heading">未開始</h2>
+<h3>向き</h3>
+<p id="heading">未開始</p>
 
-    <script src="script.js"></script>
+<h3>加速度</h3>
+<p>X：<span id="accX">0</span></p>
+<p>Y：<span id="accY">0</span></p>
+<p>Z：<span id="accZ">0</span></p>
+
+<script src="script.js"></script>
 
 </body>
 </html>
