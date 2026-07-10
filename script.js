@@ -2,6 +2,8 @@ let stepCount = 0;
 let lastStepTime = 0;
 let isPeak = false;
 
+let magnitudeHistory = [];
+
 function requestPermission() {
 
     if (
@@ -59,13 +61,22 @@ function handleMotion(event) {
     // 合成加速度
     const magnitude = Math.sqrt(x * x + y * y + z * z);
 
+    magnitudeHistory.push(magnitude);
+
+    if (magnitudeHistory.length > 5) {
+        magnitudeHistory.shift();
+    }
+    const averageMagnitude =
+    magnitudeHistory.reduce((a, b) => a + b, 0)
+    / magnitudeHistory.length;
+
     document.getElementById("magnitude").innerText =
-        magnitude.toFixed(2);
+        averageMagnitude.toFixed(2);
 
     const now = Date.now();
 
     // ピーク検出
-    if (magnitude > 11.5 && !isPeak && (now - lastStepTime) > 350) {
+    if (averageMagnitude > 11.5 && !isPeak && (now - lastStepTime) > 350) {
 
         stepCount++;
         lastStepTime = now;
@@ -75,8 +86,8 @@ function handleMotion(event) {
     }
 
     // ピーク解除
-    if (magnitude < 10.5) {
-        isPeak = false;
+    if (averageMagnitude < 10.5) {
+    isPeak = false;
     }
 
 }
