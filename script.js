@@ -86,7 +86,7 @@ function handleMotion(event) {
     }
 
     // ピーク解除
-    if (averageMagnitude < 10.5) {
+    if (averageMagnitude < 10.2) {
     isPeak = false;
     }
 
