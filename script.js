@@ -76,7 +76,7 @@ function handleMotion(event) {
     const now = Date.now();
 
     // ピーク検出
-    if (averageMagnitude > 11 && !isPeak && (now - lastStepTime) > 350) {
+    if (averageMagnitude > 10.8 && !isPeak && (now - lastStepTime) > 350) {
 
         stepCount++;
         lastStepTime = now;
