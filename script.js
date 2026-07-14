@@ -1,3 +1,7 @@
+let stepLength = 0.7;     // 歩幅(m)
+let currentHeading = 0;   // 現在の向き
+let posX = 0;
+let posY = 0;
 let stepCount = 0;
 let lastStepTime = 0;
 let isPeak = false;
@@ -39,7 +43,10 @@ function startSensor() {
 // 向き
 function handleOrientation(event) {
 
-    let heading = event.alpha;
+    currentHeading = event.alpha;
+
+    document.getElementById("heading").innerText =
+    Math.round(currentHeading) + "°";
 
     document.getElementById("heading").innerText =
         Math.round(heading) + "°";
@@ -79,6 +86,18 @@ function handleMotion(event) {
     if (averageMagnitude > 10.8 && !isPeak && (now - lastStepTime) > 350) {
 
         stepCount++;
+        const rad = currentHeading * Math.PI / 180;
+
+        posX += stepLength * Math.cos(rad);
+
+        posY += stepLength * Math.sin(rad);
+
+        document.getElementById("posX").innerText =
+        posX.toFixed(2);
+
+        document.getElementById("posY").innerText =
+        posY.toFixed(2);
+        
         lastStepTime = now;
         isPeak = true;
 
