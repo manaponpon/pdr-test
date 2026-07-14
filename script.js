@@ -1,3 +1,10 @@
+let canvas;
+let ctx;
+
+let drawX = 250;
+let drawY = 250;
+
+const SCALE = 50;
 let stepLength = 0.7;     // 歩幅(m)
 let currentHeading = 0;   // 現在の向き
 let posX = 0;
@@ -33,6 +40,16 @@ function requestPermission() {
 }
 
 function startSensor() {
+    canvas = document.getElementById("map");
+    ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.arc(250,250,5,0,Math.PI*2);
+    ctx.fill();
 
     window.addEventListener("deviceorientation", handleOrientation);
     window.addEventListener("devicemotion", handleMotion);
@@ -46,10 +63,7 @@ function handleOrientation(event) {
     currentHeading = event.alpha;
 
     document.getElementById("heading").innerText =
-    Math.round(currentHeading) + "°";
-
-    document.getElementById("heading").innerText =
-        Math.round(heading) + "°";
+        Math.round(currentHeading) + "°";
 }
 
 // 加速度・歩数判定
@@ -63,6 +77,20 @@ function handleMotion(event) {
 
     document.getElementById("accX").innerText = x.toFixed(2);
     document.getElementById("accY").innerText = y.toFixed(2);
+    const oldX = drawX;
+    const oldY = drawY;
+
+    drawX = 250 + posX * SCALE;
+    drawY = 250 - posY * SCALE;
+
+    ctx.beginPath();
+    ctx.moveTo(oldX, oldY);
+    ctx.lineTo(drawX, drawY);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(drawX, drawY, 4, 0, Math.PI * 2);
+    ctx.fill();
     document.getElementById("accZ").innerText = z.toFixed(2);
 
     // 合成加速度
@@ -97,7 +125,7 @@ function handleMotion(event) {
 
         document.getElementById("posY").innerText =
         posY.toFixed(2);
-        
+
         lastStepTime = now;
         isPeak = true;
 
