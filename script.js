@@ -1,4 +1,4 @@
-
+alert("script.jsを読み込みました");
 let canvas;
 let ctx;
 
@@ -17,6 +17,7 @@ let isPeak = false;
 let magnitudeHistory = [];
 
 function requestPermission() {
+    alert("requestPermissionが呼ばれました");
 
     if (
         typeof DeviceOrientationEvent !== "undefined" &&
