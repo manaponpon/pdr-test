@@ -77,20 +77,7 @@ function handleMotion(event) {
 
     document.getElementById("accX").innerText = x.toFixed(2);
     document.getElementById("accY").innerText = y.toFixed(2);
-    const oldX = drawX;
-    const oldY = drawY;
 
-    drawX = 250 + posX * SCALE;
-    drawY = 250 - posY * SCALE;
-
-    ctx.beginPath();
-    ctx.moveTo(oldX, oldY);
-    ctx.lineTo(drawX, drawY);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(drawX, drawY, 4, 0, Math.PI * 2);
-    ctx.fill();
     document.getElementById("accZ").innerText = z.toFixed(2);
 
     // 合成加速度
@@ -119,6 +106,21 @@ function handleMotion(event) {
         posX += stepLength * Math.cos(rad);
 
         posY += stepLength * Math.sin(rad);
+
+        const oldX = drawX;
+        const oldY = drawY;
+
+        drawX = 250 + posX * SCALE;
+        drawY = 250 - posY * SCALE;
+
+        ctx.beginPath();
+        ctx.moveTo(oldX, oldY);
+        ctx.lineTo(drawX, drawY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(drawX, drawY, 4, 0, Math.PI * 2);
+        ctx.fill();
 
         document.getElementById("posX").innerText =
         posX.toFixed(2);
