@@ -46,28 +46,17 @@ function startSensor() {
     alert("① startSensorが呼ばれました");
 
     canvas = document.getElementById("map");
-    alert("② canvas取得");
+
+    if (canvas === null) {
+        alert("canvasが見つかりません");
+        return;
+    }
+
+    alert("② canvas取得成功");
 
     ctx = canvas.getContext("2d");
-    alert("③ ctx取得");
 
-    ctx.fillStyle = "white";
-    alert("④ fillStyle");
-
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    alert("⑤ fillRect");
-
-    ctx.fillStyle = "red";
-    ctx.beginPath();
-    ctx.arc(250,250,5,0,Math.PI*2);
-    ctx.fill();
-    alert("⑥ 赤丸描画");
-
-    window.addEventListener("deviceorientation", handleOrientation);
-    window.addEventListener("devicemotion", handleMotion);
-    alert("⑦ イベント登録");
-
-    alert("⑧ センサ開始しました");
+    alert("③ ctx取得成功");
 }
 
 // 向き
