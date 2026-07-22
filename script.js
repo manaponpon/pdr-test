@@ -1,3 +1,4 @@
+
 let canvas;
 let ctx;
 
@@ -14,7 +15,15 @@ let lastStepTime = 0;
 let isPeak = false;
 
 let magnitudeHistory = [];
+function startSensor() {
 
+    alert("startSensorが呼ばれました");
+
+    canvas = document.getElementById("map");
+    ctx = canvas.getContext("2d");
+
+    
+}
 function requestPermission() {
 
     if (
