@@ -1,4 +1,3 @@
-alert("script.jsを読み込みました");
 let canvas;
 let ctx;
 
@@ -17,7 +16,6 @@ let isPeak = false;
 let magnitudeHistory = [];
 
 function requestPermission() {
-    alert("requestPermissionが呼ばれました");
 
     if (
         typeof DeviceOrientationEvent !== "undefined" &&
@@ -43,25 +41,26 @@ function requestPermission() {
 
 function startSensor() {
 
-    alert("① startSensorが呼ばれました");
-
     canvas = document.getElementById("map");
-
-    if (canvas === null) {
-        alert("canvasが見つかりません");
-        return;
-    }
-
-    alert("② canvas取得成功");
-
     ctx = canvas.getContext("2d");
 
-    alert("③ ctx取得成功");
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.arc(250, 250, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    window.addEventListener("deviceorientation", handleOrientation);
+    window.addEventListener("devicemotion", handleMotion);
+
+    alert("センサ開始しました");
 }
 
 // 向き
 function handleOrientation(event) {
-    alert("Orientationが呼ばれた");
+
     currentHeading = event.alpha;
 
     document.getElementById("heading").innerText =
@@ -70,7 +69,7 @@ function handleOrientation(event) {
 
 // 加速度・歩数判定
 function handleMotion(event) {
-    alert("Motionが呼ばれた");
+    
     const acc = event.accelerationIncludingGravity;
 
     const x = acc.x;
