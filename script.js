@@ -62,7 +62,7 @@ function startSensor() {
 
 // 向き
 function handleOrientation(event) {
-
+    alert("Orientationが呼ばれた");
     currentHeading = event.alpha;
 
     document.getElementById("heading").innerText =
@@ -71,7 +71,7 @@ function handleOrientation(event) {
 
 // 加速度・歩数判定
 function handleMotion(event) {
-
+    alert("Motionが呼ばれた");
     const acc = event.accelerationIncludingGravity;
 
     const x = acc.x;
