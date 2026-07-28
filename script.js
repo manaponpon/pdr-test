@@ -61,10 +61,20 @@ function startSensor() {
 // 向き
 function handleOrientation(event) {
 
-    currentHeading = event.alpha;
+    // iPhone用
+    let heading = event.webkitCompassHeading;
+
+    // Androidなど
+    if (heading === undefined || heading === null) {
+        heading = event.alpha;
+    }
+
+    if (heading === null || heading === undefined) return;
+
+    currentHeading = heading;
 
     document.getElementById("heading").innerText =
-        Math.round(currentHeading) + "°";
+        "現在の向き : " + Math.round(currentHeading) + "°";
 }
 
 // 加速度・歩数判定
@@ -104,10 +114,8 @@ function handleMotion(event) {
         stepCount++;
         const rad = currentHeading * Math.PI / 180;
 
-        posX += stepLength * Math.cos(rad);
-
-        posY += stepLength * Math.sin(rad);
-
+        posX += stepLength * Math.sin(rad);
+        posY += stepLength * Math.cos(rad);
         const oldX = drawX;
         const oldY = drawY;
 
