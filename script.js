@@ -1,8 +1,8 @@
 let canvas;
 let ctx;
 
-let drawX = 250;
-let drawY = 250;
+let drawX = 400;
+let drawY = 600;
 
 const SCALE = 50;
 let stepLength = 0.7;     // 歩幅(m)
@@ -55,26 +55,21 @@ function startSensor() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // 壁を描く
+    // 壁を描く
     ctx.strokeStyle = "black";
     ctx.lineWidth = 4;
 
     ctx.beginPath();
 
-    // 縦の廊下 左側
-    ctx.moveTo(175, 250);
-    ctx.lineTo(175, 50);
+    // 左側の壁
+    ctx.moveTo(325, 600);
+    ctx.lineTo(325, 400);
+    ctx.lineTo(600, 400);
 
-    // 縦の廊下 右側
-    ctx.moveTo(325, 250);
-    ctx.lineTo(325, 50);
-
-    // 横の廊下 上側
-    ctx.moveTo(325, 50);
-    ctx.lineTo(475, 50);
-
-    // 横の廊下 下側
-    ctx.moveTo(325, 200);
-    ctx.lineTo(475, 200);
+    // 右側の壁
+    ctx.moveTo(475, 600);
+    ctx.lineTo(475, 475);
+    ctx.lineTo(600, 475);
 
     ctx.stroke();
 
@@ -92,7 +87,7 @@ function startSensor() {
     ctx.fillStyle = "red";
 
     ctx.beginPath();
-    ctx.arc(250, 250, 5, 0, Math.PI * 2);
+    ctx.arc(400, 600, 5, 0, Math.PI * 2);
     ctx.fill();
 
     // センサ開始
@@ -163,8 +158,8 @@ function handleMotion(event) {
         const oldX = drawX;
         const oldY = drawY;
 
-        drawX = 250 + posX * SCALE;
-        drawY = 250 - posY * SCALE;
+        drawX = 400 + posX * SCALE;
+        drawY = 600 - posY * SCALE;
 
         ctx.beginPath();
         ctx.moveTo(oldX, oldY);
