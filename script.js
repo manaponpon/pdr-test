@@ -139,6 +139,8 @@ function handleMotion(event) {
         ctx.lineTo(drawX, drawY);
         ctx.stroke();
 
+        ctx.fillStyle = "red";
+        
         ctx.beginPath();
         ctx.arc(drawX, drawY, 4, 0, Math.PI * 2);
         ctx.fill();
