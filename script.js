@@ -44,17 +44,29 @@ function requestPermission() {
 function startSensor() {
 
     canvas = document.getElementById("map");
+
+    if (canvas === null) {
+        alert("canvasが見つかりません");
+        return;
+    }
+
     ctx = canvas.getContext("2d");
+
+    if (ctx === null) {
+        alert("ctxが取得できません");
+        return;
+    }
 
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // スタート地点
     ctx.fillStyle = "red";
     ctx.beginPath();
     ctx.arc(250, 250, 5, 0, Math.PI * 2);
     ctx.fill();
 
-    // 目的地を描く
+    // 目的地
     const targetDrawX = 250 + targetX * SCALE;
     const targetDrawY = 250 - targetY * SCALE;
 
@@ -62,7 +74,6 @@ function startSensor() {
     ctx.beginPath();
     ctx.arc(targetDrawX, targetDrawY, 7, 0, Math.PI * 2);
     ctx.fill();
-    
 
     window.addEventListener("deviceorientation", handleOrientation);
     window.addEventListener("devicemotion", handleMotion);
@@ -140,7 +151,7 @@ function handleMotion(event) {
         ctx.stroke();
 
         ctx.fillStyle = "red";
-        
+
         ctx.beginPath();
         ctx.arc(drawX, drawY, 4, 0, Math.PI * 2);
         ctx.fill();
