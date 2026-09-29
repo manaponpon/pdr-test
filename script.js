@@ -63,19 +63,19 @@ function startSensor() {
 
     // 左側の壁
     ctx.moveTo(325, 600);
-    ctx.lineTo(325, 400);
-    ctx.lineTo(600, 400);
+    ctx.lineTo(325, 200);
+    ctx.lineTo(600, 200);
 
     // 右側の壁
     ctx.moveTo(475, 600);
-    ctx.lineTo(475, 475);
-    ctx.lineTo(600, 475);
+    ctx.lineTo(475, 350);
+    ctx.lineTo(600, 350);
 
     ctx.stroke();
 
     // 目的地を描く
-    const targetDrawX = 250 + targetX * SCALE;
-    const targetDrawY = 250 - targetY * SCALE;
+    const targetDrawX = 400 + targetX * SCALE;
+    const targetDrawY = 400 - targetY * SCALE;
 
     ctx.fillStyle = "blue";
 
