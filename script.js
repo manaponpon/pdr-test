@@ -5,12 +5,12 @@ let drawX = 250;
 let drawY = 250;
 
 const SCALE = 50;
-let stepLength = 0.7;     // 歩幅(m)
+let stepLength = 0.1;     // 歩幅(m)
 let currentHeading = 0;   // 現在の向き
 let posX = 0;
 let posY = 0;
-let targetX = 3;
-let targetY = 3;
+let targetX = 2;
+let targetY = 2;
 let stepCount = 0;
 let lastStepTime = 0;
 let isPeak = false;
