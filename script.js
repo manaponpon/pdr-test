@@ -9,6 +9,8 @@ let stepLength = 0.7;     // 歩幅(m)
 let currentHeading = 0;   // 現在の向き
 let posX = 0;
 let posY = 0;
+let targetX = 3;
+let targetY = 3;
 let stepCount = 0;
 let lastStepTime = 0;
 let isPeak = false;
@@ -50,6 +52,15 @@ function startSensor() {
     ctx.fillStyle = "red";
     ctx.beginPath();
     ctx.arc(250, 250, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 目的地を描く
+    const targetDrawX = 250 + targetX * SCALE;
+    const targetDrawY = 250 - targetY * SCALE;
+
+    ctx.fillStyle = "blue";
+    ctx.beginPath();
+    ctx.arc(targetDrawX, targetDrawY, 7, 0, Math.PI * 2);
     ctx.fill();
 
     window.addEventListener("deviceorientation", handleOrientation);
