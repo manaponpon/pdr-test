@@ -43,18 +43,11 @@ function requestPermission() {
 
 function startSensor() {
 
-     // 目的地を描く
-    const targetDrawX = 250 + targetX * SCALE;
-    const targetDrawY = 250 - targetY * SCALE;
-
-    ctx.fillStyle = "blue";
-    ctx.beginPath();
-    ctx.arc(targetDrawX, targetDrawY, 7, 0, Math.PI * 2);
-    ctx.fill();
-
+    // Canvasを取得
     canvas = document.getElementById("map");
     ctx = canvas.getContext("2d");
 
+    // Canvasを白で初期化
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -81,13 +74,25 @@ function startSensor() {
     ctx.lineTo(475, 200);
 
     ctx.stroke();
-    
+
+    // 目的地を描く
+    const targetDrawX = 250 + targetX * SCALE;
+    const targetDrawY = 250 - targetY * SCALE;
+
+    ctx.fillStyle = "blue";
+
+    ctx.beginPath();
+    ctx.arc(targetDrawX, targetDrawY, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 現在位置（スタート地点）
     ctx.fillStyle = "red";
+
     ctx.beginPath();
     ctx.arc(250, 250, 5, 0, Math.PI * 2);
     ctx.fill();
 
-   
+    // センサ開始
     window.addEventListener("deviceorientation", handleOrientation);
     window.addEventListener("devicemotion", handleMotion);
 
