@@ -34,7 +34,10 @@ function requestPermission() {
             }
 
         })
-        .catch(console.error);
+        .catch(error => {
+            console.error(error);
+            alert("センサの許可でエラーが発生しました");
+        });
 
     } else {
         startSensor();
