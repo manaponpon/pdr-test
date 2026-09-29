@@ -58,6 +58,30 @@ function startSensor() {
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // 壁を描く
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 4;
+
+    ctx.beginPath();
+
+    // 縦の廊下 左側
+    ctx.moveTo(175, 250);
+    ctx.lineTo(175, 50);
+
+    // 縦の廊下 右側
+    ctx.moveTo(325, 250);
+    ctx.lineTo(325, 50);
+
+    // 横の廊下 上側
+    ctx.moveTo(325, 50);
+    ctx.lineTo(475, 50);
+
+    // 横の廊下 下側
+    ctx.moveTo(325, 200);
+    ctx.lineTo(475, 200);
+
+    ctx.stroke();
+    
     ctx.fillStyle = "red";
     ctx.beginPath();
     ctx.arc(250, 250, 5, 0, Math.PI * 2);
@@ -140,7 +164,7 @@ function handleMotion(event) {
         ctx.stroke();
 
         ctx.fillStyle = "red";
-        
+
         ctx.beginPath();
         ctx.arc(drawX, drawY, 4, 0, Math.PI * 2);
         ctx.fill();
