@@ -5,7 +5,7 @@ let drawX = 250;
 let drawY = 250;
 
 const SCALE = 50;
-let stepLength = 0.1;     // 歩幅(m)
+let stepLength = 0.7;     // 歩幅(m)
 let currentHeading = 0;   // 現在の向き
 let posX = 0;
 let posY = 0;
@@ -43,6 +43,15 @@ function requestPermission() {
 
 function startSensor() {
 
+     // 目的地を描く
+    const targetDrawX = 250 + targetX * SCALE;
+    const targetDrawY = 250 - targetY * SCALE;
+
+    ctx.fillStyle = "blue";
+    ctx.beginPath();
+    ctx.arc(targetDrawX, targetDrawY, 7, 0, Math.PI * 2);
+    ctx.fill();
+
     canvas = document.getElementById("map");
     ctx = canvas.getContext("2d");
 
@@ -54,15 +63,7 @@ function startSensor() {
     ctx.arc(250, 250, 5, 0, Math.PI * 2);
     ctx.fill();
 
-    // 目的地を描く
-    const targetDrawX = 250 + targetX * SCALE;
-    const targetDrawY = 250 - targetY * SCALE;
-
-    ctx.fillStyle = "blue";
-    ctx.beginPath();
-    ctx.arc(targetDrawX, targetDrawY, 7, 0, Math.PI * 2);
-    ctx.fill();
-
+   
     window.addEventListener("deviceorientation", handleOrientation);
     window.addEventListener("devicemotion", handleMotion);
 
