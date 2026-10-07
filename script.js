@@ -226,5 +226,36 @@ if (averageMagnitude < stepMinMagnitude) {
     if (averageMagnitude < 10.4) {
     isPeak = false;
     }
+    function saveTrial() {
+
+    const actualDistance =
+        parseFloat(
+            document.getElementById("actualDistance").value
+        );
+
+    if (stepCount < 10) {
+        alert("10歩歩いてから保存してください");
+        return;
+    }
+
+    if (isNaN(actualDistance)) {
+        alert("実際に歩いた距離を入力してください");
+        return;
+    }
+
+    const trial = {
+        steps: stepCount,
+        actualDistance: actualDistance,
+        data: trialData
+    };
+
+    console.log("10歩分のデータ");
+    console.log(trial);
+
+    alert(
+        "10歩のデータを保存しました\n" +
+        "実距離：" + actualDistance.toFixed(2) + " m"
+    );
+}
 
 }

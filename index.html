@@ -32,6 +32,36 @@
 <p>X：<span id="targetX">2.00</span> m</p>
 <p>Y：<span id="targetY">2.00</span> m</p>
 
+<h3>歩行データ</h3>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>歩数</th>
+            <th>歩行周期(s)</th>
+            <th>周波数(Hz)</th>
+            <th>最大加速度</th>
+            <th>最小加速度</th>
+            <th>変化量</th>
+        </tr>
+    </thead>
+
+    <tbody id="stepTable">
+    </tbody>
+</table>
+
+<h3>10歩の実距離</h3>
+
+<input
+    type="number"
+    id="actualDistance"
+    step="0.01"
+    placeholder="例：6.80">
+
+<span>m</span>
+
+<button onclick="saveTrial()">10歩のデータを保存</button>
+
 <h3>歩行軌跡</h3>
 
 <canvas
