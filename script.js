@@ -17,6 +17,11 @@ let isPeak = false;
 
 let magnitudeHistory = [];
 
+// 歩幅推定用データ
+let stepStartTime = 0;
+let stepMaxMagnitude = 0;
+let stepMinMagnitude = 999;
+
 function requestPermission() {
 
     if (
@@ -142,6 +147,15 @@ function handleMotion(event) {
     magnitudeHistory.reduce((a, b) => a + b, 0)
     / magnitudeHistory.length;
 
+// 1歩ごとの加速度の最大・最小を記録
+if (averageMagnitude > stepMaxMagnitude) {
+    stepMaxMagnitude = averageMagnitude;
+}
+
+if (averageMagnitude < stepMinMagnitude) {
+    stepMinMagnitude = averageMagnitude;
+}
+
     document.getElementById("magnitude").innerText =
         averageMagnitude.toFixed(2);
 
@@ -151,6 +165,30 @@ function handleMotion(event) {
     if (averageMagnitude > 10.8 && !isPeak && (now - lastStepTime) > 350) {
 
         stepCount++;
+            // 1歩にかかった時間
+    let stepTime = 0;
+
+    if (stepStartTime !== 0) {
+        stepTime = (now - stepStartTime) / 1000;
+    }
+
+    stepStartTime = now;
+
+    // 加速度の変化量
+    const accelerationRange =
+        stepMaxMagnitude - stepMinMagnitude;
+
+    console.log(
+        "歩数:", stepCount,
+        "歩行時間:", stepTime.toFixed(3), "秒",
+        "最大加速度:", stepMaxMagnitude.toFixed(2),
+        "最小加速度:", stepMinMagnitude.toFixed(2),
+        "加速度変化量:", accelerationRange.toFixed(2)
+    );
+
+    // 次の1歩の記録を開始
+    stepMaxMagnitude = averageMagnitude;
+    stepMinMagnitude = averageMagnitude;
         const rad = currentHeading * Math.PI / 180;
 
         posX += stepLength * Math.sin(rad);
