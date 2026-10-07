@@ -22,6 +22,8 @@ let stepStartTime = 0;
 let stepMaxMagnitude = 0;
 let stepMinMagnitude = 999;
 
+let trialData = [];
+
 function requestPermission() {
 
     if (
@@ -185,6 +187,29 @@ if (averageMagnitude < stepMinMagnitude) {
         "最小加速度:", stepMinMagnitude.toFixed(2),
         "加速度変化量:", accelerationRange.toFixed(2)
     );
+    
+    let gaitFrequency = 0;
+
+if (stepTime > 0) {
+    gaitFrequency = 1 / stepTime;
+}
+
+if (stepTime > 0) {
+
+    const table = document.getElementById("stepTable");
+
+    const row = table.insertRow();
+
+    row.insertCell(0).innerText = stepCount;
+    row.insertCell(1).innerText = stepTime.toFixed(2);
+    row.insertCell(2).innerText = gaitFrequency.toFixed(2);
+    row.insertCell(3).innerText =
+        stepMaxMagnitude.toFixed(2);
+    row.insertCell(4).innerText =
+        stepMinMagnitude.toFixed(2);
+    row.insertCell(5).innerText =
+        accelerationRange.toFixed(2);
+}
 
     // 次の1歩の記録を開始
     stepMaxMagnitude = averageMagnitude;
@@ -226,6 +251,8 @@ if (averageMagnitude < stepMinMagnitude) {
     if (averageMagnitude < 10.4) {
     isPeak = false;
     }
+
+}
     function saveTrial() {
 
     const actualDistance =
@@ -258,4 +285,4 @@ if (averageMagnitude < stepMinMagnitude) {
     );
 }
 
-}
+
