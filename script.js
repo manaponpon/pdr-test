@@ -8,27 +8,32 @@ const CONFIG = {
   // 方式A：固定歩幅
   fixedStepLength: 0.70,
 
-  // 平滑化フィルター
-  smoothingWindow: 5,
+  // 3サンプルの移動平均
+  smoothingWindow: 3,
 
   // 歩数検出の設定
-  baselineWindow: 31,
-  minPeakSignal: 0.30,
-  minPeakProminence: 0.12,
+  baselineWindow: 21,
+
+  // ピーク検出の最低条件
+  minPeakSignal: 0.15,
+  minPeakProminence: 0.04,
+
+  // 連続カウントを防止する時間
   minStepIntervalMs: 300,
 
-  // 方式C：Weinberg型の動的歩幅
-  // 歩幅 = K × 加速度振幅^(1/4)
+  // 方式C：Weinberg型動的歩幅
   K: 0.42,
-
-  // 歩幅が極端な値にならないための制限
   minStepLength: 0.25,
-  maxStepLength: 1.20
+  maxStepLength: 1.20,
+
+  // 加速度データの保存上限
+  maxSignalSamples: 180,
+  maxStepSamples: 300
 };
 
 
 // ========================================
-// 計測データ
+// 状態管理
 // ========================================
 
 const state = {
@@ -36,14 +41,15 @@ const state = {
   startTime: 0,
 
   stepCount: 0,
+
   heading: 0,
   hasHeading: false,
 
   lastStepTime: 0,
 
   rawSamples: [],
-  filteredSamples: [],
   baselineSamples: [],
+  signalSamples: [],
   stepSamples: [],
 
   rows: [],
@@ -69,8 +75,10 @@ function clamp(value, min, max) {
 function average(values) {
   if (values.length === 0) return 0;
 
-  return values.reduce((sum, value) => sum + value, 0)
-    / values.length;
+  return values.reduce(
+    (sum, value) => sum + value,
+    0
+  ) / values.length;
 }
 
 function median(values) {
@@ -106,8 +114,8 @@ function resetTrial() {
   state.lastStepTime = 0;
 
   state.rawSamples = [];
-  state.filteredSamples = [];
   state.baselineSamples = [];
+  state.signalSamples = [];
   state.stepSamples = [];
 
   state.rows = [];
@@ -118,9 +126,11 @@ function resetTrial() {
   state.distanceA = 0;
   state.distanceC = 0;
 
-  $("heading").textContent = "--";
+  $("heading").textContent = "未取得";
   $("rawMagnitude").textContent = "--";
   $("filteredMagnitude").textContent = "--";
+  $("stepSignal").textContent = "--";
+  $("threshold").textContent = "--";
   $("stepCount").textContent = "0";
 
   $("position").textContent =
@@ -136,34 +146,37 @@ function resetTrial() {
 
 
 // ========================================
-// センサー許可
+// センサーの許可
 // ========================================
 
 async function requestSensorPermission() {
-  const requests = [];
-
-  if (
-    typeof DeviceMotionEvent !== "undefined" &&
-    typeof DeviceMotionEvent.requestPermission === "function"
-  ) {
-    requests.push(DeviceMotionEvent.requestPermission());
-  }
-
-  if (
-    typeof DeviceOrientationEvent !== "undefined" &&
-    typeof DeviceOrientationEvent.requestPermission === "function"
-  ) {
-    requests.push(DeviceOrientationEvent.requestPermission());
-  }
-
-  if (requests.length === 0) {
-    return true;
-  }
-
   try {
-    const results = await Promise.all(requests);
+    // iPhoneのSafariではユーザー操作後の許可が必要
+    if (
+      typeof DeviceMotionEvent !== "undefined" &&
+      typeof DeviceMotionEvent.requestPermission === "function"
+    ) {
+      const result =
+        await DeviceMotionEvent.requestPermission();
 
-    return results.every(result => result === "granted");
+      if (result !== "granted") {
+        return false;
+      }
+    }
+
+    if (
+      typeof DeviceOrientationEvent !== "undefined" &&
+      typeof DeviceOrientationEvent.requestPermission === "function"
+    ) {
+      const result =
+        await DeviceOrientationEvent.requestPermission();
+
+      if (result !== "granted") {
+        return false;
+      }
+    }
+
+    return true;
   } catch (error) {
     console.error("センサー許可エラー:", error);
     return false;
@@ -172,7 +185,7 @@ async function requestSensorPermission() {
 
 
 // ========================================
-// 計測開始・終了
+// 計測開始
 // ========================================
 
 async function startSensor() {
@@ -182,7 +195,7 @@ async function startSensor() {
 
   if (!granted) {
     alert(
-      "センサーが許可されませんでした。ブラウザの設定を確認してください。"
+      "センサーが許可されませんでした。Safariの設定を確認してください。"
     );
     return;
   }
@@ -206,14 +219,12 @@ async function startSensor() {
     handleOrientation,
     { passive: true }
   );
-
-  window.addEventListener(
-    "deviceorientationabsolute",
-    handleOrientation,
-    { passive: true }
-  );
 }
 
+
+// ========================================
+// 計測終了
+// ========================================
 
 function stopSensor() {
   if (!state.running) return;
@@ -227,11 +238,6 @@ function stopSensor() {
 
   window.removeEventListener(
     "deviceorientation",
-    handleOrientation
-  );
-
-  window.removeEventListener(
-    "deviceorientationabsolute",
     handleOrientation
   );
 
@@ -252,8 +258,9 @@ function handleOrientation(event) {
     return;
   }
 
-  // 簡易的な方位表示。
-  // alphaが正確なコンパス方位とは限らない点に注意。
+  // 簡易的な方位値。
+  // alphaは端末の向きに関する値であり、
+  // 常に正確な北基準の方位とは限らない。
   state.heading = (360 - event.alpha + 360) % 360;
   state.hasHeading = true;
 
@@ -263,13 +270,13 @@ function handleOrientation(event) {
 
 
 // ========================================
-// 加速度取得
+// 加速度の大きさを取得
 // ========================================
 
 function getAccelerationMagnitude(event) {
   const acceleration = event.acceleration;
 
-  // 重力を除いた加速度が取得できる場合は優先する
+  // 重力を除いた加速度を優先する
   if (
     acceleration &&
     [acceleration.x, acceleration.y, acceleration.z]
@@ -285,28 +292,24 @@ function getAccelerationMagnitude(event) {
     );
   }
 
-  // 取得できない場合は重力込みの加速度を使用する
-  const gravityAcceleration =
-    event.accelerationIncludingGravity;
+  // 重力込みの値しか取得できない場合
+  const gravity = event.accelerationIncludingGravity;
 
   if (
-    gravityAcceleration &&
-    [
-      gravityAcceleration.x,
-      gravityAcceleration.y,
-      gravityAcceleration.z
-    ].every(value =>
-      typeof value === "number" &&
-      Number.isFinite(value)
-    )
+    gravity &&
+    [gravity.x, gravity.y, gravity.z]
+      .every(value =>
+        typeof value === "number" &&
+        Number.isFinite(value)
+      )
   ) {
     const magnitude = Math.hypot(
-      gravityAcceleration.x,
-      gravityAcceleration.y,
-      gravityAcceleration.z
+      gravity.x,
+      gravity.y,
+      gravity.z
     );
 
-    // 静止時の重力約9.81m/s²との差を近似的に利用
+    // 静止時の重力成分との差を近似的に使用
     return Math.abs(magnitude - 9.81);
   }
 
@@ -315,7 +318,7 @@ function getAccelerationMagnitude(event) {
 
 
 // ========================================
-// 平滑化フィルター＋歩数検出
+// 加速度処理
 // ========================================
 
 function handleMotion(event) {
@@ -329,7 +332,7 @@ function handleMotion(event) {
   $("rawMagnitude").textContent =
     rawMagnitude.toFixed(3);
 
-  // ① 移動平均フィルター
+  // ① 短い移動平均フィルター
   addLimited(
     state.rawSamples,
     rawMagnitude,
@@ -342,7 +345,7 @@ function handleMotion(event) {
   $("filteredMagnitude").textContent =
     filteredMagnitude.toFixed(3);
 
-  // ② ゆっくりした基準値の変化を推定
+  // ② 歩行信号の基準値を計算
   addLimited(
     state.baselineSamples,
     filteredMagnitude,
@@ -351,30 +354,37 @@ function handleMotion(event) {
 
   const baseline = median(state.baselineSamples);
 
-  // 基準値より上の振れを歩数検出用の信号とする
+  // ③ 基準値より上の変化を抽出
   const signal = Math.max(
     0,
     filteredMagnitude - baseline
   );
 
+  $("stepSignal").textContent =
+    signal.toFixed(3);
+
+  $("threshold").textContent =
+    CONFIG.minPeakSignal.toFixed(3);
+
+  // ピーク検出用データ
   addLimited(
-    state.filteredSamples,
+    state.signalSamples,
     {
       time: now,
       signal: signal,
       magnitude: filteredMagnitude
     },
-    120
+    CONFIG.maxSignalSamples
   );
 
-  // 1歩ごとの振幅計算用データ
+  // 方式Cの振幅計算用データ
   addLimited(
     state.stepSamples,
     {
       time: now,
       magnitude: filteredMagnitude
     },
-    200
+    CONFIG.maxStepSamples
   );
 
   detectStep();
@@ -382,12 +392,13 @@ function handleMotion(event) {
 
 
 // ========================================
-// ピークによる歩数検出
+// ピーク検出
 // ========================================
 
 function detectStep() {
-  const samples = state.filteredSamples;
+  const samples = state.signalSamples;
 
+  // 3点で山を判定する
   if (samples.length < 3) return;
 
   const n = samples.length;
@@ -396,25 +407,25 @@ function detectStep() {
   const peak = samples[n - 2];
   const right = samples[n - 1];
 
-  // 真ん中のデータが山になっているか判定
+  // 中央の点が局所的なピークか
   const isPeak =
     peak.signal >= left.signal &&
     peak.signal > right.signal;
 
   if (!isPeak) return;
 
-  // ノイズレベルのピークを除外
+  // 最低しきい値
   if (peak.signal < CONFIG.minPeakSignal) return;
 
-  // ピークが周囲より十分高いか確認
+  // 周囲との高さの差を確認
   const prominence =
     peak.signal - Math.min(left.signal, right.signal);
 
   if (prominence < CONFIG.minPeakProminence) return;
 
-  // 短時間の連続カウントを防止
+  // 前回の歩数から短すぎる場合は無視
   if (
-    state.lastStepTime !== 0 &&
+    state.lastStepTime > 0 &&
     peak.time - state.lastStepTime <
       CONFIG.minStepIntervalMs
   ) {
@@ -423,22 +434,25 @@ function detectStep() {
 
   const previousStepTime = state.lastStepTime;
 
-  registerStep(peak.time, previousStepTime);
-
   state.lastStepTime = peak.time;
+
+  registerStep(
+    peak.time,
+    previousStepTime
+  );
 }
 
 
 // ========================================
-// 方式C：動的歩幅の推定
+// 方式C：動的歩幅の計算
 // ========================================
 
 function estimateDynamicStepLength(
   stepTime,
   previousStepTime
 ) {
-  // 直前の歩数から今回のピークまでの区間を使う。
-  // 最初の1歩は、直近約0.5秒を使う。
+  // 前のピークから今回のピークまでを1歩区間とする
+  // 最初の1歩だけ直近500msを使用
   const startTime = previousStepTime > 0
     ? previousStepTime
     : stepTime - 500;
@@ -457,13 +471,13 @@ function estimateDynamicStepLength(
     };
   }
 
-  // その歩行区間の加速度の最大値と最小値の差
   const maxValue = Math.max(...segment);
   const minValue = Math.min(...segment);
 
   const amplitude = maxValue - minValue;
 
-  // Weinberg型モデル
+  // Weinberg型モデル：
+  // 歩幅 = K × 加速度振幅^(1/4)
   const estimatedLength =
     CONFIG.K * Math.pow(
       Math.max(amplitude, 0.01),
@@ -477,14 +491,14 @@ function estimateDynamicStepLength(
   );
 
   return {
-    amplitude: amplitude,
-    stepLength: stepLength
+    amplitude,
+    stepLength
   };
 }
 
 
 // ========================================
-// 歩数を確定して位置を更新
+// 歩数確定・位置更新
 // ========================================
 
 function registerStep(time, previousStepTime) {
@@ -499,8 +513,7 @@ function registerStep(time, previousStepTime) {
   const amplitude = result.amplitude;
 
   // 方位をラジアンに変換
-  const radians =
-    state.heading * Math.PI / 180;
+  const radians = state.heading * Math.PI / 180;
 
   // 方式A：固定歩幅
   const dxA =
@@ -529,7 +542,7 @@ function registerStep(time, previousStepTime) {
   const row = {
     elapsed: (time - state.startTime) / 1000,
     step: state.stepCount,
-    amplitude: amplitude,
+    amplitude,
     stepA: CONFIG.fixedStepLength,
     stepC: stepLengthC,
     distanceA: state.distanceA,
@@ -572,7 +585,7 @@ function registerStep(time, previousStepTime) {
 
 
 // ========================================
-// 表にデータを追加
+// 表へ追加
 // ========================================
 
 function addTableRow(row) {
@@ -584,6 +597,7 @@ function addTableRow(row) {
     row.amplitude.toFixed(3),
     row.stepA.toFixed(3),
     row.stepC.toFixed(3),
+    row.distanceA.toFixed(2),
     row.distanceC.toFixed(2),
     row.heading.toFixed(1)
   ];
@@ -620,10 +634,13 @@ function drawMap() {
     );
   });
 
-  let minX = Math.min(-1, ...points.map(p => p.x)) - 1;
-  let maxX = Math.max(1, ...points.map(p => p.x)) + 1;
-  let minY = Math.min(-1, ...points.map(p => p.y)) - 1;
-  let maxY = Math.max(1, ...points.map(p => p.y)) + 1;
+  const xs = points.map(p => p.x);
+  const ys = points.map(p => p.y);
+
+  const minX = Math.min(-1, ...xs) - 1;
+  const maxX = Math.max(1, ...xs) + 1;
+  const minY = Math.min(-1, ...ys) - 1;
+  const maxY = Math.max(1, ...ys) + 1;
 
   const scale = Math.min(
     (width - 80) / (maxX - minX),
@@ -637,7 +654,7 @@ function drawMap() {
     };
   }
 
-  // 背景グリッド
+  // グリッド
   ctx.strokeStyle = "#eeeeee";
   ctx.lineWidth = 1;
 
@@ -737,22 +754,22 @@ function saveTrial() {
     state.posC.y
   );
 
-  const lines = [];
-
-  lines.push([
-    "経過時間_s",
-    "歩数",
-    "加速度振幅_mps2",
-    "方式A歩幅_m",
-    "方式C歩幅_m",
-    "方式A累積距離_m",
-    "方式C累積距離_m",
-    "方式A_X_m",
-    "方式A_Y_m",
-    "方式C_X_m",
-    "方式C_Y_m",
-    "方位_deg"
-  ]);
+  const lines = [
+    [
+      "経過時間_s",
+      "歩数",
+      "加速度振幅_mps2",
+      "方式A歩幅_m",
+      "方式C歩幅_m",
+      "方式A累積距離_m",
+      "方式C累積距離_m",
+      "方式A_X_m",
+      "方式A_Y_m",
+      "方式C_X_m",
+      "方式C_Y_m",
+      "方位_deg"
+    ]
+  ];
 
   state.rows.forEach(row => {
     lines.push([
@@ -788,7 +805,7 @@ function saveTrial() {
   ]);
 
   lines.push([
-    "終点変位_sqrt(X^2+Y^2)_m",
+    "終点変位_m",
     displacementA.toFixed(4),
     displacementC.toFixed(4),
     ""
@@ -808,13 +825,6 @@ function saveTrial() {
     ""
   ]);
 
-  lines.push([
-    "注記",
-    "終点変位は曲がった経路では累積距離より短くなります。",
-    "",
-    ""
-  ]);
-
   const csv =
     "\uFEFF" +
     lines.map(row =>
@@ -831,11 +841,12 @@ function saveTrial() {
 
   link.href = url;
   link.download = "pdr_trial.csv";
+
   document.body.appendChild(link);
   link.click();
   link.remove();
 
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 
@@ -867,5 +878,5 @@ $("saveButton").addEventListener(
 );
 
 
-// 初期画面
+// 初期表示
 drawMap();

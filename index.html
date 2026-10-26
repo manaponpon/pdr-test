@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDR センサーテスト</title>
+  <title>PDR センサーテスト 改良版</title>
 
   <style>
     body {
@@ -20,11 +20,21 @@
       margin: 4px;
     }
 
+    button:disabled {
+      opacity: 0.5;
+    }
+
     .sensor-box {
       border: 1px solid #ccc;
       border-radius: 8px;
       padding: 12px;
-      margin: 8px 0;
+      margin: 10px 0;
+      overflow-wrap: anywhere;
+    }
+
+    .note {
+      color: #555;
+      font-size: 14px;
     }
 
     canvas {
@@ -36,55 +46,68 @@
     table {
       border-collapse: collapse;
       width: 100%;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     th, td {
       border: 1px solid #ccc;
       padding: 6px;
       text-align: right;
+      white-space: nowrap;
     }
 
     th:first-child, td:first-child {
       text-align: left;
     }
 
-    .note {
-      color: #555;
-      font-size: 14px;
+    .table-wrap {
+      overflow-x: auto;
     }
   </style>
 </head>
 
 <body>
-  <h1>PDR センサーテスト</h1>
+  <h1>PDR センサーテスト 改良版</h1>
 
   <p>
-    方式A：固定歩幅（0.70 m）<br>
-    方式C：加速度から推定する動的歩幅
+    方式A：固定歩幅<br>
+    方式C：加速度振幅に基づく動的歩幅
   </p>
 
-  <button id="startButton">センサーテスト開始</button>
+  <button id="startButton">センサー計測開始</button>
   <button id="stopButton" disabled>計測終了</button>
   <button id="resetButton">リセット</button>
 
-  <h2>センサー情報</h2>
+  <h2>1. センサー情報</h2>
 
   <div class="sensor-box">
-    方位：<strong id="heading">--</strong><br>
-    生の加速度の大きさ：<strong id="rawMagnitude">--</strong> m/s²<br>
-    平滑化後の信号：<strong id="filteredMagnitude">--</strong> m/s²<br>
-    歩数：<strong id="stepCount">0</strong>
+    方位：
+    <strong id="heading">未取得</strong><br>
+
+    生の加速度の大きさ：
+    <strong id="rawMagnitude">--</strong> m/s²<br>
+
+    平滑化後の加速度：
+    <strong id="filteredMagnitude">--</strong> m/s²<br>
+
+    歩数検出用信号：
+    <strong id="stepSignal">--</strong> m/s²<br>
+
+    現在の検出しきい値：
+    <strong id="threshold">--</strong> m/s²<br>
+
+    歩数：
+    <strong id="stepCount">0</strong>
   </div>
 
-  <h2>推定結果</h2>
+  <h2>2. 推定結果</h2>
 
   <div class="sensor-box">
     <p id="position">計測開始後に表示されます。</p>
     <p id="lastStep">直近の方式C歩幅：-- m</p>
   </div>
 
-  <h2>実測距離</h2>
+  <h2>3. 実測距離</h2>
 
   <label for="actualDistance">
     実際に歩いた距離（m）：
@@ -100,7 +123,7 @@
 
   <button id="saveButton">CSV保存</button>
 
-  <h2>歩行軌跡</h2>
+  <h2>4. 歩行軌跡</h2>
 
   <p class="note">
     青：方式A（固定歩幅）<br>
@@ -109,9 +132,9 @@
 
   <canvas id="map" width="800" height="500"></canvas>
 
-  <h2>歩数ごとの記録</h2>
+  <h2>5. 歩数ごとの記録</h2>
 
-  <div style="overflow-x:auto">
+  <div class="table-wrap">
     <table>
       <thead>
         <tr>
@@ -120,6 +143,7 @@
           <th>加速度振幅</th>
           <th>A歩幅(m)</th>
           <th>C歩幅(m)</th>
+          <th>A累積距離(m)</th>
           <th>C累積距離(m)</th>
           <th>方位(°)</th>
         </tr>
@@ -131,8 +155,8 @@
 
   <p class="note">
     注意：方式CはWeinberg型モデルを参考にした試作です。
-    歩幅の推定精度は、実測データで確認してください。
-    スマホの方位センサーが不正確な場合、軌跡も不正確になります。
+    Kの値は実測により調整が必要です。
+    方位センサーの値が不正確な場合、歩行軌跡もずれることがあります。
   </p>
 
   <script src="script.js"></script>
