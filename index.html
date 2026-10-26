@@ -1,78 +1,52 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDR センサーテスト</title>
 </head>
-
 <body>
 
 <h2>PDR センサーテスト</h2>
 
-<button onclick="requestPermission()">センサテスト開始</button>
+<button id="startButton">センサーテスト開始</button>
+<button onclick="stopSensor()">計測終了</button>
 
 <h3>向き</h3>
-<p id="heading">未開始</p>
+<p id="heading">0°</p>
 
 <h3>加速度</h3>
-<p>X：<span id="accX">0</span></p>
-<p>Y：<span id="accY">0</span></p>
-<p>Z：<span id="accZ">0</span></p>
+<p>加速度：<span id="acceleration">0</span></p>
 
 <h3>歩数</h3>
-<p>合成加速度：<span id="magnitude">0</span></p>
-<p>歩数：<span id="step">0</span></p>
+<p>歩数：<span id="stepCount">0</span></p>
 
-<h3>現在位置</h3>
-<p>X：<span id="posX">0.00</span> m</p>
-<p>Y：<span id="posY">0.00</span> m</p>
+<h3>現在位置と推定距離</h3>
+<p id="position">方式A・Bの位置は計測開始後に表示されます。</p>
 
-<h3>目的地</h3>
-
-<p>X：<span id="targetX">2.00</span> m</p>
-<p>Y：<span id="targetY">2.00</span> m</p>
-
-<h3>歩行データ</h3>
-
-<table border="1">
-    <thead>
-        <tr>
-            <th>歩数</th>
-            <th>歩行周期(s)</th>
-            <th>周波数(Hz)</th>
-            <th>最大加速度</th>
-            <th>最小加速度</th>
-            <th>変化量</th>
-        </tr>
-    </thead>
-
-    <tbody id="stepTable">
-    </tbody>
-</table>
-
-<h3>10歩の実距離</h3>
-
+<h3>実測距離</h3>
+<label for="actualDistance">歩いた距離（m）：</label>
 <input
     type="number"
     id="actualDistance"
+    value="10"
+    min="0.01"
     step="0.01"
-    placeholder="例：6.80">
-
-<span>m</span>
-
-<button onclick="saveTrial()">10歩のデータを保存</button>
+>
+<button onclick="saveTrial()">データをCSV保存</button>
 
 <h3>歩行軌跡</h3>
-
+<p>青：方式A、赤：方式B</p>
 <canvas
     id="map"
     width="800"
     height="800"
-    style="border:1px solid black;">
-</canvas>
+    style="border:1px solid black; max-width:100%; height:auto;"
+></canvas>
 
 <script src="script.js"></script>
 
-
 </body>
 </html>
+```
