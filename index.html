@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDR センサーテスト 改良版</title>
+  <title>PDR センサーテスト</title>
 
   <style>
     body {
@@ -38,6 +39,7 @@
     }
 
     canvas {
+      display: block;
       width: 100%;
       height: auto;
       border: 1px solid #aaa;
@@ -67,11 +69,11 @@
 </head>
 
 <body>
-  <h1>PDR センサーテスト 改良版</h1>
+  <h1>PDR センサーテスト</h1>
 
   <p>
-    方式A：固定歩幅<br>
-    方式C：加速度振幅に基づく動的歩幅
+    方式A：固定歩幅（0.70 m）<br>
+    方式C：加速度振幅による動的歩幅
   </p>
 
   <button id="startButton">センサー計測開始</button>
@@ -81,20 +83,17 @@
   <h2>1. センサー情報</h2>
 
   <div class="sensor-box">
-    方位：
-    <strong id="heading">未取得</strong><br>
-
-    生の加速度の大きさ：
+    重力込み加速度の大きさ：
     <strong id="rawMagnitude">--</strong> m/s²<br>
 
-    平滑化後の加速度：
+    歩数検出値（フィルタなし）：
     <strong id="filteredMagnitude">--</strong> m/s²<br>
 
-    歩数検出用信号：
-    <strong id="stepSignal">--</strong> m/s²<br>
+    歩数検出しきい値：
+    <strong id="threshold">10.8</strong> m/s²<br>
 
-    現在の検出しきい値：
-    <strong id="threshold">--</strong> m/s²<br>
+    方位：
+    <strong id="heading">未取得</strong><br>
 
     歩数：
     <strong id="stepCount">0</strong>
@@ -155,8 +154,8 @@
 
   <p class="note">
     注意：方式CはWeinberg型モデルを参考にした試作です。
-    Kの値は実測により調整が必要です。
-    方位センサーの値が不正確な場合、歩行軌跡もずれることがあります。
+    Kの値は実測データで調整してください。
+    方位は端末やブラウザによって正確でない場合があります。
   </p>
 
   <script src="script.js"></script>
