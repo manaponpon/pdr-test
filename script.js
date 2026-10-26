@@ -23,7 +23,7 @@ const CONFIG = {
   maxStepSamples: 300
 };
 
-
+document.getElementById("kValue").textContent = CONFIG.K;
 // ========================================
 // 状態管理
 // ========================================
