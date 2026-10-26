@@ -15,7 +15,7 @@ const CONFIG = {
   minStepIntervalMs: 350,
 
   // 方式C：Weinberg型の動的歩幅
-  K: 0.574,
+  K: 0.5,
   minStepLength: 0.25,
   maxStepLength: 1.20,
 
