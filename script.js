@@ -23,31 +23,36 @@ const CONFIG = {
     arrivalDistance: 1.0,
     distanceAnnouncementInterval: 1.0,
 
-    // 加速度データ保存
     maxStepSamples: 300
 };
 
+
 // ========================================
-// 2. 地図設定（単位：m）
+// 2. 地図設定
 // ========================================
 
-// スタート地点を (0,0) とする
-// X：東方向がプラス
-// Y：北方向がプラス
+// 単位：m
+// スタート地点 (0,0)
+// 北方向：Yプラス
+// 東方向：Xプラス
 
 const WALLS = [
+    // 左側の壁
     { x1: -1.5, y1: 0, x2: -1.5, y2: 8 },
-    { x1: -1.5, y1: 8, x2: 4, y2: 8 },
 
-    { x1: 1.5, y1: 0, x2: 1.5, y2: 5 },
-    { x1: 1.5, y1: 5, x2: 4, y2: 5 }
+    // 右側の壁
+    { x1: 1.5, y1: 0, x2: 1.5, y2: 8 },
+
+    // 奥の壁
+    { x1: -1.5, y1: 8, x2: 1.5, y2: 8 }
 ];
 
-// 目的地
+// 通路中央の目的地
 const TARGET = {
-    x: 2,
-    y: 2
+    x: 0,
+    y: 7
 };
+
 
 // ========================================
 // 3. 状態管理
@@ -112,8 +117,8 @@ function playNextSpeech() {
 
     utterance.lang = "ja-JP";
     utterance.rate = 0.9;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+    utterance.pitch = 1;
+    utterance.volume = 1;
 
     state.speaking = true;
 
@@ -177,7 +182,6 @@ async function requestSensorPermission() {
     } catch (error) {
 
         console.error(error);
-
         return false;
     }
 }
@@ -194,16 +198,13 @@ async function startSensor() {
     const granted = await requestSensorPermission();
 
     if (!granted) {
-
         alert("センサーが許可されませんでした");
-
         return;
     }
 
     resetTrial(false);
 
     state.startTime = performance.now();
-
     state.running = true;
 
     window.addEventListener(
@@ -262,9 +263,7 @@ function stopSensor() {
 
 function resetTrial(clearQueue = true) {
 
-    if (clearQueue) {
-        clearSpeech();
-    }
+    if (clearQueue) clearSpeech();
 
     state.stepCount = 0;
     state.heading = 0;
@@ -294,7 +293,7 @@ function resetTrial(clearQueue = true) {
     $("posY").textContent = "0.00";
 
     $("targetDistance").textContent =
-        Math.hypot(TARGET.x, TARGET.y).toFixed(2);
+        calculateRouteDistance(0, 0).toFixed(2);
 
     $("wallDistance").textContent =
         nearestWallDistance(0, 0).toFixed(2);
@@ -316,7 +315,6 @@ function handleOrientation(event) {
 
     let heading = null;
 
-    // iPhone
     if (
         typeof event.webkitCompassHeading === "number" &&
         Number.isFinite(event.webkitCompassHeading)
@@ -324,10 +322,7 @@ function handleOrientation(event) {
 
         heading = event.webkitCompassHeading;
 
-    }
-
-    // その他の端末
-    else if (
+    } else if (
         typeof event.alpha === "number" &&
         Number.isFinite(event.alpha)
     ) {
@@ -388,7 +383,6 @@ function handleMotion(event) {
     $("magnitude").textContent =
         magnitude.toFixed(3);
 
-    // 加速度データ保存
     state.samples.push({
         time: now,
         magnitude: magnitude
@@ -401,12 +395,10 @@ function handleMotion(event) {
         state.samples.shift();
     }
 
-    // 次の歩数を検出可能にする
     if (magnitude < CONFIG.resetThreshold) {
         state.stepReady = true;
     }
 
-    // 歩数検出
     if (
         magnitude > CONFIG.stepThreshold &&
         state.stepReady &&
@@ -430,7 +422,7 @@ function handleMotion(event) {
 
 
 // ========================================
-// 12. Weinberg法による歩幅推定
+// 12. Weinberg法
 // ========================================
 
 // L = K × A^(1/4)
@@ -462,7 +454,6 @@ function estimateStepLength(
     }
 
     const maxValue = Math.max(...values);
-
     const minValue = Math.min(...values);
 
     const amplitude = maxValue - minValue;
@@ -484,7 +475,25 @@ function estimateStepLength(
 
 
 // ========================================
-// 13. 歩数確定・位置更新
+// 13. 中央ルートの距離計算
+// ========================================
+
+function calculateRouteDistance(x, y) {
+
+    // 現在位置から通路中央まで
+    const horizontalDistance =
+        Math.abs(x - TARGET.x);
+
+    // 通路中央から目的地まで
+    const verticalDistance =
+        Math.abs(TARGET.y - y);
+
+    return horizontalDistance + verticalDistance;
+}
+
+
+// ========================================
+// 14. 歩数確定・位置更新
 // ========================================
 
 function registerStep(time, previousTime) {
@@ -499,23 +508,20 @@ function registerStep(time, previousTime) {
     const rad =
         state.heading * Math.PI / 180;
 
-    // 北方向をYプラス、東方向をXプラス
+    // 位置更新
     state.x += stepLength * Math.sin(rad);
-
     state.y += stepLength * Math.cos(rad);
 
     state.totalDistance += stepLength;
 
-    // 距離計算
-    const targetDistance = Math.hypot(
-        TARGET.x - state.x,
-        TARGET.y - state.y
-    );
+    // 中央ルートの残り距離
+    const targetDistance =
+        calculateRouteDistance(state.x, state.y);
 
     const wallDistance =
         nearestWallDistance(state.x, state.y);
 
-    // 画面更新
+    // 画面表示
     $("stepCount").textContent =
         String(state.stepCount);
 
@@ -534,24 +540,17 @@ function registerStep(time, previousTime) {
     $("wallDistance").textContent =
         wallDistance.toFixed(2);
 
-    // CSV用データ
+    // CSV記録
     const row = {
-
         step: state.stepCount,
-
         time: (time - state.startTime) / 1000,
-
         amplitude: result.amplitude,
-
         length: stepLength,
-
         total: state.totalDistance,
-
         x: state.x,
-
         y: state.y,
-
-        heading: state.heading
+        heading: state.heading,
+        routeDistance: targetDistance
     };
 
     state.rows.push(row);
@@ -560,7 +559,6 @@ function registerStep(time, previousTime) {
 
     // 音声案内
     checkWall(wallDistance);
-
     checkDestination(targetDistance);
 
     // 地図更新
@@ -569,7 +567,7 @@ function registerStep(time, previousTime) {
 
 
 // ========================================
-// 14. 壁までの距離
+// 15. 壁までの距離
 // ========================================
 
 function distanceToSegment(
@@ -585,23 +583,16 @@ function distanceToSegment(
         dx * dx + dy * dy;
 
     if (denominator === 0) {
-
-        return Math.hypot(
-            px - x1,
-            py - y1
-        );
+        return Math.hypot(px - x1, py - y1);
     }
 
     let t =
-        (
-            (px - x1) * dx +
-            (py - y1) * dy
-        ) / denominator;
+        ((px - x1) * dx +
+         (py - y1) * dy) / denominator;
 
     t = Math.max(0, Math.min(1, t));
 
     const nearestX = x1 + t * dx;
-
     const nearestY = y1 + t * dy;
 
     return Math.hypot(
@@ -631,7 +622,7 @@ function nearestWallDistance(x, y) {
 
 
 // ========================================
-// 15. 壁への接近音声
+// 16. 壁への接近音声
 // ========================================
 
 function checkWall(distance) {
@@ -646,10 +637,8 @@ function checkWall(distance) {
         );
 
         state.wallAlert = true;
-    }
 
-    // 壁から離れたら再通知可能
-    else if (
+    } else if (
         distance >= CONFIG.wallResetDistance
     ) {
 
@@ -659,12 +648,11 @@ function checkWall(distance) {
 
 
 // ========================================
-// 16. 目的地までの距離・到着
+// 17. 目的地までの距離・到着
 // ========================================
 
 function checkDestination(distance) {
 
-    // 到着判定
     if (distance <= CONFIG.arrivalDistance) {
 
         if (!state.arrived) {
@@ -684,7 +672,6 @@ function checkDestination(distance) {
 
     if (state.arrived) return;
 
-    // 距離案内
     const interval =
         CONFIG.distanceAnnouncementInterval;
 
@@ -709,7 +696,7 @@ function checkDestination(distance) {
 
 
 // ========================================
-// 17. 歩行データの表
+// 18. 表への記録
 // ========================================
 
 function addTableRow(row) {
@@ -717,21 +704,13 @@ function addTableRow(row) {
     const tr = document.createElement("tr");
 
     const values = [
-
         row.step,
-
         row.time.toFixed(2),
-
         row.amplitude.toFixed(3),
-
         row.length.toFixed(3),
-
         row.total.toFixed(2),
-
         row.x.toFixed(2),
-
         row.y.toFixed(2),
-
         row.heading.toFixed(1)
     ];
 
@@ -749,13 +728,12 @@ function addTableRow(row) {
 
 
 // ========================================
-// 18. 地図描画
+// 19. 地図描画
 // ========================================
 
 function drawMap() {
 
     const canvas = $("map");
-
     const ctx = canvas.getContext("2d");
 
     const width = canvas.width;
@@ -766,10 +744,8 @@ function drawMap() {
     ctx.clearRect(0, 0, width, height);
 
     ctx.fillStyle = "white";
-
     ctx.fillRect(0, 0, width, height);
 
-    // 表示範囲
     const xs = [
         0, TARGET.x, state.x,
         ...WALLS.flatMap(w => [w.x1, w.x2]),
@@ -796,9 +772,7 @@ function drawMap() {
     function toCanvas(x, y) {
 
         return {
-
             x: padding + (x - minX) * scale,
-
             y: height - padding - (y - minY) * scale
         };
     }
@@ -808,7 +782,6 @@ function drawMap() {
     ctx.lineWidth = 1;
 
     for (let x = 0; x < width; x += 50) {
-
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, height);
@@ -816,7 +789,6 @@ function drawMap() {
     }
 
     for (let y = 0; y < height; y += 50) {
-
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(width, y);
@@ -834,12 +806,25 @@ function drawMap() {
         const b = toCanvas(wall.x2, wall.y2);
 
         ctx.beginPath();
-
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
-
         ctx.stroke();
     });
+
+    // 中央ルート
+    const routeStart = toCanvas(0, 0);
+    const routeEnd = toCanvas(0, TARGET.y);
+
+    ctx.strokeStyle = "#16A34A";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 6]);
+
+    ctx.beginPath();
+    ctx.moveTo(routeStart.x, routeStart.y);
+    ctx.lineTo(routeEnd.x, routeEnd.y);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
 
     // 歩行軌跡
     if (state.rows.length > 0) {
@@ -855,8 +840,7 @@ function drawMap() {
 
         state.rows.forEach(row => {
 
-            const point =
-                toCanvas(row.x, row.y);
+            const point = toCanvas(row.x, row.y);
 
             ctx.lineTo(point.x, point.y);
         });
@@ -872,9 +856,7 @@ function drawMap() {
         ctx.fillStyle = color;
 
         ctx.beginPath();
-
         ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
-
         ctx.fill();
 
         ctx.fillStyle = "black";
@@ -905,7 +887,7 @@ function drawMap() {
 
 
 // ========================================
-// 19. CSV保存
+// 20. CSV保存
 // ========================================
 
 function csvEscape(value) {
@@ -945,7 +927,8 @@ function saveTrial() {
             "累積距離_m",
             "X_m",
             "Y_m",
-            "方位_deg"
+            "方位_deg",
+            "中央ルート残距離_m"
         ]
     ];
 
@@ -954,20 +937,14 @@ function saveTrial() {
         lines.push([
 
             row.step,
-
             row.time.toFixed(3),
-
             row.amplitude.toFixed(5),
-
             row.length.toFixed(4),
-
             row.total.toFixed(4),
-
             row.x.toFixed(4),
-
             row.y.toFixed(4),
-
-            row.heading.toFixed(2)
+            row.heading.toFixed(2),
+            row.routeDistance.toFixed(4)
         ]);
     });
 
@@ -984,7 +961,7 @@ function saveTrial() {
     ]);
 
     lines.push([
-        "推定累積距離_m",
+        "推定累積歩行距離_m",
         state.totalDistance.toFixed(4)
     ]);
 
@@ -996,7 +973,7 @@ function saveTrial() {
         ]);
 
         lines.push([
-            "絶対誤差_m",
+            "歩行距離の絶対誤差_m",
             Math.abs(
                 state.totalDistance - actual
             ).toFixed(4)
@@ -1019,7 +996,6 @@ function saveTrial() {
     const link = document.createElement("a");
 
     link.href = url;
-
     link.download = "pdr_navigation_trial.csv";
 
     document.body.appendChild(link);
@@ -1035,7 +1011,7 @@ function saveTrial() {
 
 
 // ========================================
-// 20. ボタン設定
+// 21. ボタン設定・初期表示
 // ========================================
 
 $("startButton").addEventListener(
@@ -1056,8 +1032,7 @@ $("resetButton").addEventListener(
 
         resetTrial(true);
 
-        $("status").textContent =
-            "リセットしました";
+        $("status").textContent = "リセットしました";
     }
 );
 
@@ -1066,13 +1041,12 @@ $("saveButton").addEventListener(
     saveTrial
 );
 
+// Kの値
+$("kValue").textContent = CONFIG.K;
 
-// ========================================
-// 21. 初期表示
-// ========================================
-
+// 初期距離
 $("targetDistance").textContent =
-    Math.hypot(TARGET.x, TARGET.y).toFixed(2);
+    calculateRouteDistance(0, 0).toFixed(2);
 
 $("wallDistance").textContent =
     nearestWallDistance(0, 0).toFixed(2);
