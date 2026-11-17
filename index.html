@@ -2,163 +2,359 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDR センサーテスト</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDR 屋内ナビゲーション</title>
 
-  <style>
-    body {
-      font-family: sans-serif;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 16px;
-      line-height: 1.6;
-    }
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 950px;
+            margin: 0 auto;
+            padding: 16px;
+            line-height: 1.6;
+            background: #fafafa;
+        }
 
-    button, input {
-      font-size: 16px;
-      padding: 8px;
-      margin: 4px;
-    }
+        h1, h2 {
+            color: #333;
+        }
 
-    button:disabled {
-      opacity: 0.5;
-    }
+        button, input {
+            font-size: 16px;
+            padding: 10px;
+            margin: 4px;
+        }
 
-    .sensor-box {
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 12px;
-      margin: 10px 0;
-      overflow-wrap: anywhere;
-    }
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            background: #1976d2;
+            color: white;
+        }
 
-    .note {
-      color: #555;
-      font-size: 14px;
-    }
+        button:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
 
-    canvas {
-      display: block;
-      width: 100%;
-      height: auto;
-      border: 1px solid #aaa;
-    }
+        .reset-button {
+            background: #666;
+        }
 
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 13px;
-    }
+        .save-button {
+            background: #16803c;
+        }
 
-    th, td {
-      border: 1px solid #ccc;
-      padding: 6px;
-      text-align: right;
-      white-space: nowrap;
-    }
+        .panel {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
 
-    th:first-child, td:first-child {
-      text-align: left;
-    }
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
 
-    .table-wrap {
-      overflow-x: auto;
-    }
-  </style>
+        .sensor-item {
+            background: #f1f4f8;
+            border-radius: 7px;
+            padding: 10px;
+        }
+
+        .sensor-item strong {
+            font-size: 20px;
+            color: #1976d2;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border: 1px solid #aaa;
+            background: white;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 13px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 7px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #e9edf2;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        .note {
+            font-size: 13px;
+            color: #666;
+        }
+
+        #status {
+            font-weight: bold;
+            color: #1976d2;
+        }
+
+        .formula {
+            background: #f1f4f8;
+            padding: 12px;
+            border-radius: 7px;
+            font-size: 18px;
+            text-align: center;
+        }
+    </style>
 </head>
 
 <body>
-  <h1>PDR センサーテスト</h1>
 
-  <p>
-    方式A：固定歩幅（0.70 m）<br>
-    方式C：加速度振幅による動的歩幅
-  </p>
+    <h1>PDR 屋内ナビゲーション</h1>
 
-  <button id="startButton">センサー計測開始</button>
-  <button id="stopButton" disabled>計測終了</button>
-  <button id="resetButton">リセット</button>
+    <div class="panel">
 
-  <h2>1. センサー情報</h2>
+        <h2>計測操作</h2>
 
-  <div class="sensor-box">
-    重力込み加速度の大きさ：
-    <strong id="rawMagnitude">--</strong> m/s²<br>
+        <button id="startButton">
+            センサー開始
+        </button>
 
-    歩数検出値（フィルタなし）：
-    <strong id="filteredMagnitude">--</strong> m/s²<br>
+        <button id="stopButton" disabled>
+            計測停止
+        </button>
 
-    歩数検出しきい値：
-    <strong id="threshold">10.8</strong> m/s²<br>
+        <button id="resetButton" class="reset-button">
+            リセット
+        </button>
 
-    方位：
-    <strong id="heading">未取得</strong><br>
+        <button id="saveButton" class="save-button">
+            CSV保存
+        </button>
 
-    歩数：
-    <strong id="stepCount">0</strong>
-    <p>方式Cの係数 K：<span id="kValue">0.49</span></p>
-  </div>
+        <p id="status">未開始</p>
 
-  <h2>2. 推定結果</h2>
+        <p class="note">
+            スマートフォンを胸の前で固定して計測してください。
+            センサーの使用と音声案内にはブラウザの許可が必要です。
+        </p>
 
-  <div class="sensor-box">
-    <p id="position">計測開始後に表示されます。</p>
-    <p id="lastStep">直近の方式C歩幅：-- m</p>
-  </div>
+    </div>
 
-  <h2>3. 実測距離</h2>
 
-  <label for="actualDistance">
-    実際に歩いた距離（m）：
-  </label>
+    <div class="panel">
 
-  <input
-    type="number"
-    id="actualDistance"
-    value="10"
-    min="0.01"
-    step="0.01"
-  >
+        <h2>1. センサー情報・現在位置</h2>
 
-  <button id="saveButton">CSV保存</button>
+        <div class="sensor-grid">
 
-  <h2>4. 歩行軌跡</h2>
+            <div class="sensor-item">
+                向き
+                <br>
+                <strong id="heading">未取得</strong>
+            </div>
 
-  <p class="note">
-    青：方式A（固定歩幅）<br>
-    赤：方式C（動的歩幅）
-  </p>
+            <div class="sensor-item">
+                合成加速度
+                <br>
+                <strong id="magnitude">--</strong>
+                m/s²
+            </div>
 
-  <canvas id="map" width="800" height="500"></canvas>
+            <div class="sensor-item">
+                歩数
+                <br>
+                <strong id="stepCount">0</strong>
+                歩
+            </div>
 
-  <h2>5. 歩数ごとの記録</h2>
+            <div class="sensor-item">
+                直近の推定歩幅
+                <br>
+                <strong id="lastStep">--</strong>
+            </div>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>時間(s)</th>
-          <th>歩数</th>
-          <th>加速度振幅</th>
-          <th>A歩幅(m)</th>
-          <th>C歩幅(m)</th>
-          <th>A累積距離(m)</th>
-          <th>C累積距離(m)</th>
-          <th>方位(°)</th>
-        </tr>
-      </thead>
+            <div class="sensor-item">
+                現在位置 X
+                <br>
+                <strong id="posX">0.00</strong>
+                m
+            </div>
 
-      <tbody id="stepTable"></tbody>
-    </table>
-  </div>
+            <div class="sensor-item">
+                現在位置 Y
+                <br>
+                <strong id="posY">0.00</strong>
+                m
+            </div>
 
-  <p class="note">
-    注意：方式CはWeinberg型モデルを参考にした試作です。
-    Kの値は実測データで調整してください。
-    方位は端末やブラウザによって正確でない場合があります。
-  </p>
+            <div class="sensor-item">
+                目的地までの距離
+                <br>
+                <strong id="targetDistance">--</strong>
+                m
+            </div>
 
-  <script src="script.js"></script>
+            <div class="sensor-item">
+                最も近い壁まで
+                <br>
+                <strong id="wallDistance">--</strong>
+                m
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h2>2. Weinberg法による歩幅推定</h2>
+
+        <div class="formula">
+            L = K × A<sup>1/4</sup>
+        </div>
+
+        <p>
+            L：推定歩幅（m）
+        </p>
+
+        <p>
+            K：歩幅推定係数
+        </p>
+
+        <p>
+            A：1歩区間の加速度振幅
+        </p>
+
+        <p class="note">
+            加速度振幅は、1歩の区間における
+            合成加速度の最大値と最小値の差です。
+        </p>
+
+        <p>
+            現在の係数 K：
+            <strong id="kValue">0.49</strong>
+        </p>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h2>3. 地図・歩行軌跡</h2>
+
+        <canvas
+            id="map"
+            width="800"
+            height="800">
+        </canvas>
+
+        <p class="note">
+            黒線：壁
+            <br>
+            赤線：推定した歩行軌跡
+            <br>
+            緑丸：スタート地点
+            <br>
+            青丸：目的地
+            <br>
+            赤丸：現在位置
+        </p>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h2>4. 実測距離・推定距離</h2>
+
+        <label for="actualDistance">
+            実際に歩いた距離（m）：
+        </label>
+
+        <input
+            type="number"
+            id="actualDistance"
+            value="10"
+            min="0.01"
+            step="0.01">
+
+        <p id="summary">
+            計測開始後に表示されます。
+        </p>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h2>5. 歩数ごとのデータ</h2>
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>歩数</th>
+                        <th>時間(s)</th>
+                        <th>加速度振幅</th>
+                        <th>推定歩幅(m)</th>
+                        <th>累積距離(m)</th>
+                        <th>X(m)</th>
+                        <th>Y(m)</th>
+                        <th>方位(°)</th>
+                    </tr>
+                </thead>
+
+                <tbody id="stepTable">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h2>6. 音声案内</h2>
+
+        <p>
+            以下の3種類の音声案内を実装しています。
+        </p>
+
+        <ul>
+            <li>壁に近づいたときの警告</li>
+            <li>目的地までの残り距離</li>
+            <li>目的地への到着通知</li>
+        </ul>
+
+        <p class="note">
+            音声案内は推定位置をもとに行います。
+            実際の壁や目的地との位置関係を保証するものではありません。
+        </p>
+
+    </div>
+
+
+    <!-- JavaScript読み込み -->
+    <script src="script.js"></script>
+
 </body>
 </html>
